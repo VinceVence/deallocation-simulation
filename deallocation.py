@@ -1,4 +1,5 @@
-# Importing the libraries
+    # Importing the libraries
+import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -52,12 +53,14 @@ def statistics(time_latency=[], df=None):
 
     plt.tight_layout()
 
-def generate_fixed_partition_dataframe(num_jobs):
+    st.write(f"Total time latency = {np.sum(time_latency)}")
+    st.write(f"Average time latency = {np.mean(time_latency)}")
+    st.pyplot(fig)
+
+def generate_fixed_partition_dataframe(num_job, MAX_MEMORY = 15000):
     """
     This is a function that generates a memory block containing equally distributed memory address and block size, and randomized job status.
     """
-    # Setup random seed for reproducing the simulation
-
 
     random_memory_locations = np.linspace(1, MAX_MEMORY, num_job, dtype='int')
     random_job_status = np.random.randint(0, 2, num_job)
@@ -79,16 +82,16 @@ def deallocate_fixed_partition(df):
     for i in range(len(df)):
         if df["Job Status"].loc[i] == 1:
             # Simulating Fixed partition deallocation
-            print(f"Deallocating Memory for Memory Address: {df['Memory Address'].loc[i]}...")
+            st.write(f"Deallocating Memory for Memory Address: {df['Memory Address'].loc[i]}...")
             time_ = time_deallocation(df["Memory Block Size"].loc[i])
             time_latency.append(time_)
             time.sleep(time_)
             df["Job Status"].loc[i] = 0
             deallocated_memory_count += 1
-    print(f"Total memory deallocated: {deallocated_memory_count}")
+    st.write(f"Total memory deallocated: {deallocated_memory_count}")
     return time_latency
 
-def generate_dynamic_partition_dataframe(num_jobs, case1=False, case2=False, case3=False):
+def generate_dynamic_partition_dataframe(num_jobs, case1=False, case2=False, case3=False, MAX_MEMORY = 15000):
     """
     This is a function that generates a memory block containing randomized distributed memory address, block size, job status.
     """
@@ -130,16 +133,16 @@ def deallocate_dynamic_case_1(df, one_iter=False):
     time_latency = []
 
     while df["Job Status"].nunique() != 1:
-        print(f"Iteration Number: {iterations}")
+        st.write(f"Iteration Number: {iterations}")
         rows_to_drop = []
         for i in range(len(df) - 1):
             if df["Job Status"].loc[i] == 1 and df["Job Status"].loc[i + 1] == 0:
                 # Simulating case 1 dyanmic partition deallocation
-                print(f"\tWaiting for Memory in Memory address {df['Memory Address'].loc[i]} to be realeased (free)...")
+                st.write(f"  \tWaiting for Memory in Memory address {df['Memory Address'].loc[i]} to be realeased (free)...")
                 time_ = time_deallocation(df["Memory Block Size"].loc[i])
                 time.sleep(time_)
-                print(f"\tDeallocating Memory for Memory Address: {df['Memory Address'].loc[i]}...")
-                print(f"\tJoining Memory Address {df['Memory Address'].loc[i]} and {df['Memory Address'].loc[i + 1]}\n")
+                st.write(f"  \tDeallocating Memory for Memory Address: {df['Memory Address'].loc[i]}...")
+                st.write(f"  \tJoining Memory Address {df['Memory Address'].loc[i]} and {df['Memory Address'].loc[i + 1]}  \n")
 
                 # Freeing job status
                 df["Job Status"].loc[i] = 0
@@ -159,7 +162,7 @@ def deallocate_dynamic_case_1(df, one_iter=False):
         if one_iter:
           break
         iterations +=1
-    print(f"Total memory deallocated: {initial_len - len(df['Memory Address'])}.")
+    st.write(f"Total memory deallocated: {initial_len - len(df['Memory Address'])}.")
     return time_latency
 
 def deallocate_dynamic_case_2(df, remove_null=False):
@@ -176,11 +179,11 @@ def deallocate_dynamic_case_2(df, remove_null=False):
     for i in range(1, len(df) - 2):
         if df["Job Status"].loc[i] == 1 and df["Job Status"].loc[i + 1] == 0 and df["Job Status"].loc[i - 1] == 0:
             # Simulating case 2 dyanmic partition deallocation
-            print(f"Waiting for Memory in Memory address {df['Memory Address'].loc[i]} to be realeased (free)...")
+            st.write(f"Waiting for Memory in Memory address {df['Memory Address'].loc[i]} to be realeased (free)...")
             time_ = time_deallocation(df["Memory Block Size"].loc[i])
             time.sleep(time_)
-            print(f"Deallocating Memory for Memory Address: {df['Memory Address'].loc[i]}...")
-            print(f"Joining Memory Address {df['Memory Address'].loc[i-1]}, {df['Memory Address'].loc[i]} and {df['Memory Address'].loc[i+1]}\n")
+            st.write(f"Deallocating Memory for Memory Address: {df['Memory Address'].loc[i]}...")
+            st.write(f"Joining Memory Address {df['Memory Address'].loc[i-1]}, {df['Memory Address'].loc[i]} and {df['Memory Address'].loc[i+1]}  \n")
 
             # Freeing job status
             df["Job Status"].loc[i] = 0
@@ -206,13 +209,14 @@ def deallocate_dynamic_case_2(df, remove_null=False):
 
     if remove_null:
     # Removing Null Entries
-        print(f"Removing Null Entries...")
+        st.write(f"Removing Null Entries...")
         null_entries = df[df['Job Status'].isna()].index
         time.sleep(len(null_entries))
         df.drop(null_entries, inplace=True)
-        print(f"Total number of null entries removed: {len(null_entries)}")
+        st.write(f"Total number of null entries removed: {len(null_entries)}")
         df.reset_index(inplace=True, drop=True)
-    print(f"Total memory deallocated: {initial_len - len(df['Memory Address'])}.")
+        df['Job Status'] = df['Job Status'].apply(lambda x: int(x))
+    st.write(f"Total memory deallocated: {initial_len - len(df['Memory Address'])}.")
     return time_latency
 
 def deallocate_dynamic_case_3(df, freeing_latency=2):
@@ -225,10 +229,10 @@ def deallocate_dynamic_case_3(df, freeing_latency=2):
     for i in range(1, len(df) - 2):
         if df["Job Status"].loc[i] == 1 and df["Job Status"].loc[i + 1] == 1 and df["Job Status"].loc[i - 1] == 1:
             # Simulating case 2 dyanmic partition deallocation
-            print(f"Deallocating Memory for Memory Address: {df['Memory Address'].loc[i]}...")
-            print(f"Found two adjacent busy job status for Memory Address {df['Memory Address'].loc[i]}:")
-            print(f"\t{df['Memory Address'].loc[i-1]}")
-            print(f"\t{df['Memory Address'].loc[i+1]}")
+            st.write(f"Deallocating Memory for Memory Address: {df['Memory Address'].loc[i]}...")
+            st.write(f"Found two adjacent busy job status for Memory Address {df['Memory Address'].loc[i]}:")
+            st.write(f"  \t{df['Memory Address'].loc[i-1]}")
+            st.write(f"  \t{df['Memory Address'].loc[i+1]}")
 
             time_ = time_deallocation(df['Memory Block Size'].loc[i])
             time.sleep(time_)
@@ -241,30 +245,30 @@ def deallocate_dynamic_case_3(df, freeing_latency=2):
 
     memory_deallocated = 0
     display(df)
-    free_null = input("Free Null Memories [y/N]: ")
+    free_null = st.text_input("Free Null Memories [y/N]: ", 'y', 1, help="Type 'y' for yes and 'N' for n")
     if free_null == 'y':
 
         # Free Null Entries
-        print(f"Freeing Null Entries...")
+        st.write(f"Freeing Null Entries...")
         time.sleep(freeing_latency)
         for i in range(1, len(df) - 2):
             if df['Job Status'].isna().values[i]:
 
-                print(f"Now catering memory address: {initial_df['Memory Address'].loc[i]}")
-                print(f"Waiting for adjacent memory address to be deallocated...")
+                st.write(f"Now catering memory address: {initial_df['Memory Address'].loc[i]}")
+                st.write(f"Waiting for adjacent memory address to be deallocated...")
 
                 # Deallocating previous adjacent memory address
                 df.loc[i-1, "Job Status"] = 0
                 time.sleep(freeing_latency)
-                print(f"\tAjacent memory address {df['Memory Address'].loc[i-1]} is now free!")
+                st.write(f"  \tAjacent memory address {df['Memory Address'].loc[i-1]} is now free!")
 
                 # Deallocating next adjacent memory address
                 df.loc[i+1, "Job Status"] = 0
                 time.sleep(freeing_latency)
-                print(f"\tAdjacent memory address {df['Memory Address'].loc[i+1]} is now free!\n")
+                st.write(f"  \tAdjacent memory address {df['Memory Address'].loc[i+1]} is now free!  \n")
 
                 # Re-entry of the previously nulled memory address
-                print(f"Reallocating memory address {initial_df['Memory Address'].loc[i]} to *\n")
+                st.write(f"Reallocating memory address {initial_df['Memory Address'].loc[i]} to *  \n")
                 time.sleep(freeing_latency)
 
                 # Deallocating the current memory address
@@ -272,10 +276,10 @@ def deallocate_dynamic_case_3(df, freeing_latency=2):
                 df.loc[i, "Memory Block Size"] = initial_df["Memory Block Size"].loc[i]
                 df.loc[i, "Job Status"] = 0
                 time.sleep(freeing_latency)
-                print(f"\tAdjacent memory address {df['Memory Address'].loc[i]} is now free!\n")
+                st.write(f"    \tAdjacent memory address {df['Memory Address'].loc[i]} is now free!  \n")
 
                 memory_deallocated+=3
 
         df['Job Status'] = df['Job Status'].apply(lambda x: int(x))
-    print(f"Total memory deallocated: {memory_deallocated}")
+    st.write(f"Total memory deallocated: {memory_deallocated}")
     return time_latency
