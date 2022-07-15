@@ -45,7 +45,7 @@ def main():
             generate_fixed = st.button('Generate Fixed-Partition Memory Block', on_click=callback)
             if generate_fixed or st.session_state.generate_fixed:
                 df = generate_fixed_partition_dataframe(num_jobs, MAX_MEMORY)
-                st.dataframe(df)
+                st.dataframe(df, None, None)
                 if st.button('Simulate'):
                     time_latency = deallocate_fixed_partition(df)
                     st.dataframe(df)

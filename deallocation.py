@@ -1,4 +1,4 @@
-    # Importing the libraries
+# Importing the libraries
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -244,7 +244,6 @@ def deallocate_dynamic_case_3(df, freeing_latency=2):
             df.loc[i, "Job Status"] = None
 
     memory_deallocated = 0
-    display(df)
     free_null = st.text_input("Free Null Memories [y/N]: ", 'y', 1, help="Type 'y' for yes and 'N' for n")
     if free_null == 'y':
 
